@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forschungsprojekt: Das schiefe Klett-Glücksrad</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Das Holzbrett aus dem Foto */
+        .holz-brett {
+            background-color: #f1e4c3; 
+            border-bottom: 8px solid #bfa37a; 
+            border-radius: 4px;
+            box-shadow: 10px 15px 30px rgba(0,0,0,0.15);
+            padding: 30px 20px 20px 20px;
+            width: 420px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Das weiße aufgeklebte Papierquadrat */
+        .papier-flaeche {
+            background: #ffffff;
+            background-image: 
+                linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                linear-gradient(to bottom, #e5e7eb 1px, transparent 1px);
+            background-size: 30px 30px; 
+            border: 1px solid #cbd5e1;
+            padding: 20px 10px;
+            position: relative;
+        }
+
+        /* Der Kreis des Glücksrads */
+        .rad-kontur {
+            width: 320px;
+            height: 320px;
+            border: 2px solid #334155;
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Die Sektoren-Linien exakt wie auf dem Bild */
+        .linie {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #334155;
+            transform-origin: center;
+        }
+        .l-horiz { transform: translateY(-50%) rotate(0deg); }
+        .l-schraeg1 { transform: translateY(-50%) rotate(60deg); }
+        .l-schraeg2 { transform: translateY(-50%) rotate(120deg); }
+
+        /* Platzierung der Zahlen exakt wie auf dem Foto */
+        .zahl {
+            position: absolute;
+            font-size: 26px;
+            font-weight: bold;
+            color: #334155;
+            transform: translate(-50%, -50%);
+        }
+        .z1 { top: 18%; left: 50%; }  /* 0° (oben) */
+        .z3 { top: 32%; left: 78%; }  /* 60° */
+        .z5 { top: 68%; left: 78%; }  /* 120° */
+        .z6 { top: 82%; left: 50%; }  /* 180° (unten) */
+        .z4 { top: 68%; left: 22%; }  /* 240° */
+        .z2 { top: 32%; left: 22%; }  /* 300° */
+
+        /* Der Zeiger: Die schwarze Haarnadel aus dem Foto */
+        .zeiger-achse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            z-index: 10;
+        }
+
+        .haarnadel {
+            position: absolute;
+            top: 0;
+            left: -4px; 
+            width: 8px;
+            height: 140px; 
+            background-color: #1e293b; 
+            border-radius: 4px;
+            transform-origin: top center;
+            transform: rotate(0deg); 
+            transition: transform 3s cubic-bezier(0.15, 0, 0.2, 1);
+        }
+
+        /* Klasse für die 100er-Turbo-Drehung: ca. 10 Sekunden sichtbar drehen */
+        .haarnadel.turbo-spinning {
+            transition: transform 10s linear !important;
+        }
+
+        /* Klasse für den sichtbaren 10er-Durchlauf: jede Drehung wird einzeln animiert */
+        .haarnadel.animiert-spinning {
+            transition: transform 1.15s cubic-bezier(0.15, 0, 0.2, 1) !important;
+        }
+
+        /* Die orangefarbene Pinnnadel in der Mitte */
+        .pinnnadel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background-color: #ff6b00; 
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            z-index: 20;
+        }
+
+        /* Interaktive Elemente & Statistik */
+        .controls { margin-top: 25px; display: flex; justify-content: center; gap: 10px; }
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #334155;
+            color: white;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #475569; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .stats {
+            margin-top: 20px;
+            font-size: 14px;
+            text-align: left;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="holz-brett">
+        <div class="papier-flaeche">
+            <div class="rad-kontur">
+                <div class="linie l-horiz"></div>
+                <div class="linie l-schraeg1"></div>
+                <div class="linie l-schraeg2"></div>
+
+                <div class="zahl z1">1</div>
+                <div class="zahl z3">3</div>
+                <div class="zahl z5">5</div>
+                <div class="zahl z6">6</div>
+                <div class="zahl z4">4</div>
+                <div class="zahl z2">2</div>
+            </div>
+
+            <div class="zeiger-achse">
+                <div class="haarnadel" id="zeiger"></div>
+            </div>
+            <div class="pinnnadel"></div>
+        </div>
+
+        <div class="controls">
+            <button id="btn-1x" onclick="drehen(1)">1x Anschubsen</button>
+            <button id="btn-10x" onclick="drehen(10)" style="background-color: #2563eb;">10x Anschubsen</button>
+            <button id="btn-100x" onclick="drehen(100)" style="background-color: #059669;">100x Turbo-Forschung</button>
+        </div>
+
+        <div class="stats">
+            <strong>Stichproben-Ergebnis (Gesamt: <span id="gesamt">0</span>):</strong>
+            <div id="ergebnis-liste" style="margin-top: 5px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                <div>1: 0% (0)</div><div>2: 0% (0)</div><div>3: 0% (0)</div>
+                <div>4: 0% (0)</div><div>5: 0% (0)</div><div>6: 0% (0)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let gesamt = 0;
+        let zaehler = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0};
+        let aktuellerWinkel = 0;
+        let isSpinning = false;
+
+        // Jedes Feld hat jetzt sein eigenes, festes Konfigurationsobjekt für Wahrscheinlichkeit und Winkel
+        const feldKonfiguration = {
+            // Winkel passend zur Haarnadel:
+            // rotate(0deg) zeigt nach unten, daher liegt Feld 6 bei 0°.
+            1: { chance: 8.33,  winkel: 180 },
+            2: { chance: 8.33,  winkel: 120 },
+            3: { chance: 8.34,  winkel: 240 },
+            4: { chance: 15.00, winkel: 60 },
+            5: { chance: 15.00, winkel: 300 },
+            6: { chance: 45.00, winkel: 0 }
+        };
+
+        // Ermittelt die gewürfelte Zahl basierend auf den konfigurierten Wahrscheinlichkeiten
+        function bestimmeErgebnis() {
+            let r = Math.random() * 100;
+            let summe = 0;
+            
+            // Wir gehen die Zahlen 1 bis 6 der Reihe nach durch
+            for (let i = 1; i <= 6; i++) {
+                summe += feldKonfiguration[i].chance;
+                if (r <= summe) return i;
+            }
+            return 6; // Sicherheits-Fallback
+        }
+
+        function buttonsAktivieren(status) {
+            document.getElementById('btn-1x').disabled = !status;
+            document.getElementById('btn-10x').disabled = !status;
+            document.getElementById('btn-100x').disabled = !status;
+        }
+
+        function warte(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function berechneZielWinkel(zahl, extraDrehungen) {
+            const basisWinkel = feldKonfiguration[zahl].winkel;
+            const aktuellerRest = ((aktuellerWinkel % 360) + 360) % 360;
+            const vorwaertsDifferenz = (basisWinkel - aktuellerRest + 360) % 360;
+
+            // Immer vorwärts drehen und exakt im passenden Feld landen
+            aktuellerWinkel += extraDrehungen * 360 + vorwaertsDifferenz;
+            return aktuellerWinkel;
+        }
+
+        async function drehen(anzahl) {
+            if (isSpinning) return;
+            isSpinning = true;
+            buttonsAktivieren(false);
+
+            const zeiger = document.getElementById('zeiger');
+
+            if (anzahl === 1) {
+                const erg = bestimmeErgebnis();
+                zeiger.style.transform = `rotate(${berechneZielWinkel(erg, 4)}deg)`;
+                
+                setTimeout(() => {
+                    aktualisiereDaten(erg);
+                    isSpinning = false;
+                    buttonsAktivieren(true);
+                }, 3000);
+
+            } else if (anzahl === 10) {
+                // 10er-Modus: Jede einzelne Drehung ist sichtbar und wird erst danach gezählt
+                zeiger.classList.add('animiert-spinning');
+
+                for (let i = 0; i < 10; i++) {
+                    const erg = bestimmeErgebnis();
+                    zeiger.style.transform = `rotate(${berechneZielWinkel(erg, 2)}deg)`;
+
+                    // Warten, bis die sichtbare Drehung beendet ist
+                    await warte(1250);
+                    aktualisiereDaten(erg);
+
+                    // Kurze Pause, damit man das Ergebnis wahrnehmen kann
+                    await warte(250);
+                }
+
+                zeiger.classList.remove('animiert-spinning');
+                isSpinning = false;
+                buttonsAktivieren(true);
+
+            } else {
+                // TURBO-MODUS: 100 Ergebnisse berechnen, während der Zeiger ca. 10 Sekunden sichtbar dreht
+                zeiger.classList.add('turbo-spinning');
+
+                // Lange Turbo-Animation: viele schnelle Umdrehungen über ca. 10 Sekunden
+                aktuellerWinkel += 35 * 360;
+                zeiger.style.transform = `rotate(${aktuellerWinkel}deg)`;
+
+                // Ergebnisse vorbereiten, aber erst nach der Animation in die Statistik eintragen
+                const turboErgebnisse = [];
+                for (let i = 0; i < anzahl; i++) {
+                    turboErgebnisse.push(bestimmeErgebnis());
+                }
+
+                setTimeout(() => {
+                    turboErgebnisse.forEach(erg => aktualisiereDaten(erg));
+                    zeiger.classList.remove('turbo-spinning');
+                    isSpinning = false;
+                    buttonsAktivieren(true);
+                }, 10000); 
+            }
+        }
+
+        function htmlAktualisieren() {
+            document.getElementById('gesamt').innerText = gesamt;
+            let html = '';
+            for (let i = 1; i <= 6; i++) {
+                let prozent = gesamt > 0 ? ((zaehler[i] / gesamt) * 100).toFixed(1) : 0;
+                html += `<div><b>Feld ${i}:</b> ${prozent}% (${zaehler[i]})</div>`;
+            }
+            document.getElementById('ergebnis-liste').innerHTML = html;
+        }
+
+        function aktualisiereDaten(zahl) {
+            zaehler[zahl]++;
+            gesamt++;
+            htmlAktualisieren();
+        }
+        
+        // Initiale Anzeige der Tabelle (alles auf 0)
+        htmlAktualisieren();
+    </script>
+</body>
+</html>
